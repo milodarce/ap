@@ -1,0 +1,39 @@
+        :root {
+            /* ==================================================================
+               ZONA DE EDICIÓN PARA DISEÑADORES
+               Cambia estos valores hexadecimales para adaptar la plantilla a tu marca
+               ================================================================== */
+            
+            --color-primary: rgb(255, 251, 0);       /* Rojo principal (ej. Fuego) */
+            --color-primary-hover: #be1212; /* Rojo más oscuro para hover */
+            --color-secondary: #f97316;     /* Naranja (ej. Queso/Chili) */
+            --color-accent: #fffb00;        /* Amarillo vibrante */
+            --color-dark: #111827;          /* Texto principal y Footer */
+            --color-light: #f8fafc;         /* Fondo claro general */
+
+            /* Tipografías */
+            --font-heading: 'Bowlby', sans-serif; /* Títulos llamativos */
+            --font-body: 'Bazinga', sans-serif;      /* Textos legibles */
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+.logo {
+width: 100px;
+}
+        body {
+            background-color: var(--color-light);
+            color: var(--color-dark);
+            font-family: var(--font-body);
+        }
+
+        h1, h2, h3, h4, h5, h6, .font-heading {
+            font-family: var(--font-heading);
+            text-transform: uppercase;
+        }
+
+        /* Utilidad para degradados de la marca */
+        .bg-brand-gradient {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        }

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Atomic Pizza - Lista de Juegos</title>
+    <style>
+        /* 
+         * FUENTES Y ESTILOS GLOBALES
+         */
+        @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Open+Sans:wght@700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            min-height: 100vh;
+            font-family: 'Open Sans', sans-serif;
+            background-color: #1a0b2e; /* Cielo nocturno oscuro */
+            overflow-x: hidden;
+        }
+
+        /* 
+         * FONDO DE CIUDAD NOCTURNA ESTILO CÓMIC
+         */
+        .city-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(180deg, #0e051c 0%, #2b1154 60%, #ff2a2a 100%);
+            overflow: hidden;
+        }
+
+        /* Trama de puntos (Halftone) típica de los cómics */
+        .city-background::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(rgba(0, 0, 0, 0.3) 20%, transparent 20%);
+            background-size: 8px 8px;
+            z-index: 1;
+            opacity: 0.5;
+        }
+
+        .skyline {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            z-index: 2;
+        }
+
+        /* 
+         * CONTENEDOR PRINCIPAL DEL LAUNCHER
+         */
+        .launcher-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* LOGO Y TÍTULO */
+        .header-section {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .main-logo {
+            max-width: 350px;
+            width: 90%;
+            height: auto;
+            /* Filtro de sombra dura estilo cómic para el logo si tiene fondo transparente */
+            filter: drop-shadow(8px 8px 0px rgba(0,0,0,1));
+            margin-bottom: 20px;
+        }
+
+        .main-title {
+            font-family: 'Bangers', cursive;
+            font-size: clamp(3rem, 8vw, 5rem);
+            color: #ffcc00;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 4px 4px 0 #000, 8px 8px 0 #ff2a2a;
+            -webkit-text-stroke: 1px lch(0% 0 0);
+            transform: rotate(-2deg);
+        }
+
+        /* 
+         * GRID DE JUEGOS
+         */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            width: 100%;
+            padding: 20px;
+        }
+
+        /* TARJETAS DE JUEGO */
+        .game-card {
+            background-color: #fff;
+            border: 6px solid #000;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 10px 10px 0px #000;
+            transition: all 0.2s ease-out;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px) rotate(1deg);
+            box-shadow: 15px 15px 0px #000;
+        }
+
+        /* Encabezado de la tarjeta con colores pop-art aleatorios */
+        .card-banner {
+            height: 180px;
+            border-bottom: 6px solid #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Bangers', cursive;
+            font-size: 3rem;
+            color: white;
+            -webkit-text-stroke: 2px black;
+            text-shadow: 3px 3px 0 #000;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Fondos simulados para los juegos */
+        .bg-brawl { background-color: #00d2ff; }
+        .bg-runner { background-color: #ff2a2a; }
+        .bg-alien { background-color: #ffcc00; color: #000; -webkit-text-stroke: 0px; text-shadow: 3px 3px 0 #fff;}
+
+        /* Efecto de líneas de velocidad en los banners */
+        .card-banner::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: repeating-conic-gradient(from 0deg, transparent 0deg 15deg, rgba(0,0,0,0.1) 15deg 30deg);
+            animation: spin 20s linear infinite;
+        }
+
+        .card-banner span {
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            justify-content: space-between;
+        }
+
+        .game-title {
+            font-family: 'Bangers', cursive;
+            font-size: 2rem;
+            color: #000;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .game-desc {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.4;
+            font-weight: bold;
+        }
+
+        .play-btn {
+            background-color: #ffcc00;
+            color: #000;
+            font-family: 'Bangers', cursive;
+            font-size: 1.8rem;
+            padding: 10px 20px;
+            border: 4px solid #000;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 4px 4px 0 #000;
+            transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            letter-spacing: 1px;
+        }
+
+        .play-btn:hover {
+            background-color: #ffea00;
+        }
+
+        .play-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0px 0px 0 #000;
+        }
+
+        /* 
+         * ANIMACIONES
+         */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Adaptaciones para móviles pequeños */
+        @media (max-width: 600px) {
+            .games-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            .header-section { margin-bottom: 30px; }
+            .card-banner { height: 140px; font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Fondo dinámico de la ciudad estilo cómic -->
+    <div class="city-background">
+        <svg class="skyline" preserveAspectRatio="none" viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg">
+            <!-- Edificios traseros oscuros -->
+            <rect x="0" y="100" width="120" height="200" fill="#0c0414" />
+            <rect x="100" y="50" width="150" height="250" fill="#0c0414" />
+            <rect x="230" y="120" width="180" height="180" fill="#0c0414" />
+            <rect x="400" y="30" width="130" height="270" fill="#0c0414" />
+            <rect x="520" y="90" width="160" height="210" fill="#0c0414" />
+            <rect x="650" y="150" width="200" height="150" fill="#0c0414" />
+            <rect x="800" y="60" width="140" height="240" fill="#0c0414" />
+            <rect x="920" y="110" width="100" height="190" fill="#0c0414" />
+
+            <!-- Edificios delanteros iluminados con bordes gruesos -->
+            <g stroke="#000" stroke-width="4">
+                <rect x="30" y="130" width="90" height="170" fill="#2b1154" />
+                <rect x="150" y="80" width="100" height="220" fill="#1b0a36" />
+                <rect x="280" y="160" width="110" height="140" fill="#3c1a70" />
+                <rect x="440" y="100" width="90" height="200" fill="#2b1154" />
+                <rect x="560" y="140" width="130" height="160" fill="#1b0a36" />
+                <rect x="710" y="180" width="80" height="120" fill="#3c1a70" />
+                <rect x="850" y="90" width="100" height="210" fill="#2b1154" />
+            </g>
+
+            <!-- Ventanas encendidas (Amarillas) -->
+            <g fill="#ffcc00" opacity="0.8">
+                <!-- Edificio 1 -->
+                <rect x="45" y="150" width="15" height="15" />
+                <rect x="75" y="180" width="15" height="15" />
+                <rect x="45" y="240" width="15" height="15" />
+                <!-- Edificio 2 -->
+                <rect x="170" y="100" width="20" height="30" />
+                <rect x="210" y="100" width="20" height="30" />
+                <rect x="170" y="200" width="60" height="15" />
+                <!-- Edificio 3 -->
+                <rect x="310" y="180" width="50" height="20" />
+                <!-- Edificio 4 -->
+                <rect x="460" y="120" width="10" height="10" />
+                <rect x="480" y="120" width="10" height="10" />
+                <rect x="500" y="120" width="10" height="10" />
+                <rect x="480" y="220" width="10" height="10" />
+                <!-- Edificio 5 -->
+                <rect x="580" y="160" width="20" height="20" />
+                <rect x="640" y="200" width="20" height="20" />
+                <rect x="580" y="250" width="20" height="20" />
+                <!-- Edificio 7 -->
+                <rect x="870" y="110" width="60" height="20" />
+                <rect x="870" y="150" width="60" height="20" />
+            </g>
+
+            <!-- Luna de Cómic -->
+            <circle cx="85%" cy="30%" r="50" fill="#ffea00" stroke="#000" stroke-width="4" opacity="0.9" />
+        </svg>
+    </div>
+
+    <!-- Contenido del Launcher -->
+    <div class="launcher-container">
+        
+        <!-- Cabecera -->
+        <header class="header-section">
+            <!-- AQUÍ ESTÁ TU LOGO -->
+            <img src="img/AP-LOGO.png" alt="Atomic Pizza" class="main-logo" onerror="this.src='https://placehold.co/600x300/ff2a2a/fff?text=ATOMIC+PIZZA+LOGO&font=Oswald'">
+            <h1 class="main-title">Lista de Juegos</h1>
+        </header>
+
+        <!-- Lista de Juegos -->
+        <main class="games-grid">
+            
+            <!-- Juego 1: Comic Brawl -->
+            <article class="game-card">
+                <div class="card-banner bg-brawl" style="background-image: url('https://placehold.co/400x200/00d2ff/transparent');">
+                    <span>¡BRAWL!</span>
+                </div>
+                <div class="card-content">
+                    <div>
+                        <h2 class="game-title">Comic Brawl 2-Player</h2>
+                        <p class="game-desc">¡Enfréntate a tu amigo en la arena de la ciudad! Batallas épicas 2D con poderes, saltos y mamporros en la misma pantalla.</p>
+                    </div>
+                    <a href="brawl.html" class="play-btn">JUGAR AHORA</a>
+                </div>
+            </article>
+
+            <!-- Juego 2: Runner Infinito -->
+            <article class="game-card">
+                <div class="card-banner bg-runner" style="background-image: url('https://placehold.co/400x200/ff2a2a/transparent');">
+                    <span>¡CORRE!</span>
+                </div>
+                <div class="card-content">
+                    <div>
+                        <h2 class="game-title">Metro Dash (Template)</h2>
+                        <p class="game-desc">Esquiva obstáculos y corre sin parar en este trepidante juego infinito estilo pseudo-3D adaptado para móviles.</p>
+                    </div>
+                    <a href="runner.html" class="play-btn">JUGAR AHORA</a>
+                </div>
+            </article>
+
+            <!-- Juego 3: Proximamente -->
+            <article class="game-card" style="opacity: 0.8;">
+                <div class="card-banner bg-alien">
+                    <span>???</span>
+                </div>
+                <div class="card-content">
+                    <div>
+                        <h2 class="game-title">Próximo Lanzamiento</h2>
+                        <p class="game-desc">¡Nuestros desarrolladores superhéroes están creando algo increíble en el laboratorio secreto!</p>
+                    </div>
+                    <button class="play-btn" style="background-color: #ccc; cursor: not-allowed;">PRÓXIMAMENTE</button>
+                </div>
+            </article>
+
+        </main>
+    </div>
+
+</body>
+</html>

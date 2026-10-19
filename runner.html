@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>Pop-Art Endless Runner Template</title>
+    <style>
+        /* CSS Reset and Setup for Mobile-Friendly Canvas */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none; /* Prevent text selection on tap */
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Prevent scrolling */
+            background-color: #073B4C; /* Dark retro backdrop */
+            font-family: Arial, Helvetica, sans-serif
+            touch-action: none; /* Crucial for swipe controls - disables browser pull-to-refresh */
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Overlays */
+        #uiLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to canvas or specific buttons */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            color: #FFF;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 3px 3px 0 #000;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(7, 59, 76, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto; /* Re-enable clicks for menus */
+            transition: opacity 0.3s;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .title {
+            color: #FFD166;
+            font-size: 80px;
+            text-transform: uppercase;
+            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+            text-shadow: 4px 4px 0 #000, 8px 8px 0 #EF476F, 8px 15px 0 #34208b6c;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .btn {
+            background-color: #06D6A0;
+            color: #000;
+            border: 4px solid #000;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 6px 6px 0 #000;
+            border-radius: 8px;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .btn:active {
+            transform: translate(6px, 6px);
+            box-shadow: 0px 0px 0 #000;
+        }
+
+        .instructions {
+            color: #FFF;
+            margin-top: 30px;
+            text-align: center;
+            font-size: 16px;
+            line-height: 1.5;
+            text-shadow: 2px 2px 0 #000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI Overlay Layer -->
+    <div id="uiLayer">
+        <div class="hud">
+            <div id="scoreDisplay">SCORE: 0</div>
+            <div id="coinDisplay">COINS: 0</div>
+        </div>
+    </div>
+
+    <!-- Start / Game Over Screens -->
+    <div id="startScreen" class="screen">
+        <div class="title">MEGA<br>RUN</div>
+        <button class="btn" id="startBtn">TAP TO RUN</button>
+        <div class="instructions">
+            <strong>Escritorio:</strong> Usa las teclas de flecha para moverte, saltar y agacharte <br>
+            <strong>Celular:</strong> Deslizar a la izquierda/derecha, arriba/abajo
+        </div>
+    </div>
+
+    <div id="gameOverScreen" class="screen hidden">
+        <div class="title" style="color: #EF476F;">Busted!</div>
+        <div class="hud" style="margin-bottom: 30px; flex-direction: column; text-align: center;">
+            <div id="finalScore">SCORE: 0</div>
+            <div id="finalCoins">COINS: 0</div>
+        </div>
+        <button class="btn" id="restartBtn">VAMO DE NUEVO</button>
+    </div>
+
+<script>
+    /**
+     * ==========================================
+     * GAME CONFIGURATION & TEMPLATE SETTINGS
+     * Modify these values to tune the game!
+     * ==========================================
+     */
+    const CONFIG = {
+        // Gameplay
+        baseSpeed: 1000,        // Z-units per second
+        speedMultiplier: 1.02,  // How much speed increases over time
+        maxSpeed: 3000,         // Maximum Z-units per second
+        laneWidth: 120,         // Width of each lane in world units
+        jumpForce: 600,         // Initial upward velocity
+        gravity: -1800,         // Downward pull
+        duckDuration: 600,      // How long a duck lasts in milliseconds
+
+        // Pseudo-3D Camera setup
+        focalLength: 300,       // Affects perspective distortion
+        cameraY: 150,           // Height of camera above ground
+        cameraZ: 0,             // Camera Z position
+        spawnZ: 4000,           // How far away objects spawn
+        playerZ: 200,           // Where the player sits relative to camera
+        
+        // Colors (Pop-Art Comic Palette)
+        colors: {
+            sky: '#118AB2',     // Blue
+            ground: '#073B4C',  // Dark blue
+            grid: '#000000',    // Black lines
+            player: '#06D6A0',  // Green
+            coin: '#FFD166',    // Yellow
+            obsHigh: '#EF476F', // Pink/Red
+            obsLow: '#EF476F',
+            outline: '#000000'
+        }
+    };
+
+    /**
+     * ==========================================
+     * ENGINE & STATE VARIABLES
+     * ==========================================
+     */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let gameState = 'START'; // START, PLAYING, GAMEOVER
+    let lastTime = 0;
+    let score = 0;
+    let coins = 0;
+    let currentSpeed = CONFIG.baseSpeed;
+    let distanceTraveled = 0;
+
+    // Entities Arrays
+    let obstacles = [];
+    let collectibles = [];
+    let roadLines = [];
+
+    // The Player Object
+    const player = {
+        lane: 0,           // -1 (left), 0 (center), 1 (right)
+        targetLane: 0,     // For smooth horizontal movement interpolation
+        y: 0,              // Vertical position (0 is ground)
+        vy: 0,             // Vertical velocity
+        state: 'RUNNING',  // RUNNING, JUMPING, DUCKING
+        duckTimer: 0,
+        
+        // Dimensions
+        width: 60,
+        height: 100,
+        duckHeight: 50
+    };
+
+    /**
+     * ==========================================
+     * RESIZE & SCALING
+     * Ensures crisp rendering on all devices
+     * ==========================================
+     */
+    function resizeCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        ctx.scale(dpr, dpr);
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    /**
+     * ==========================================
+     * INPUT HANDLING (KEYBOARD & SWIPE)
+     * ==========================================
+     */
+    // Keyboard
+    window.addEventListener('keydown', (e) => {
+        if (gameState !== 'PLAYING') return;
+        switch(e.code) {
+            case 'ArrowLeft': case 'KeyA': moveLeft(); break;
+            case 'ArrowRight': case 'KeyD': moveRight(); break;
+            case 'ArrowUp': case 'KeyW': jump(); break;
+            case 'ArrowDown': case 'KeyS': duck(); break;
+        }
+    });
+
+    // Touch/Swipe Logic
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const swipeThreshold = 30; // Minimum pixel drag to register a swipe
+
+    canvas.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // Prevent scrolling while playing
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+        if (gameState !== 'PLAYING') return;
+        
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        
+        const dx = touchEndX - touchStartX;
+        const dy = touchEndY - touchStartY;
+        
+        // Determine primary axis of swipe
+        if (Math.abs(dx) > Math.abs(dy)) {
+            // Horizontal Swipe
+            if (Math.abs(dx) > swipeThreshold) {
+                if (dx > 0) moveRight();
+                else moveLeft();
+            }
+        } else {
+            // Vertical Swipe
+            if (Math.abs(dy) > swipeThreshold) {
+                if (dy > 0) duck(); // Swipe down
+                else jump();        // Swipe up
+            }
+        }
+    });
+
+    // Actions
+    function moveLeft() { if (player.targetLane > -1) player.targetLane--; }
+    function moveRight() { if (player.targetLane < 1) player.targetLane++; }
+    
+    function jump() {
+        if (player.state === 'RUNNING') {
+            player.state = 'JUMPING';
+            player.vy = CONFIG.jumpForce;
+        }
+    }
+    
+    function duck() {
+        if (player.state === 'RUNNING' || player.state === 'JUMPING') {
+            player.state = 'DUCKING';
+            player.duckTimer = CONFIG.duckDuration;
+            // If in mid-air, slam down faster
+            if (player.y > 0) player.vy = CONFIG.gravity * 1.5; 
+        }
+    }
+
+    /**
+     * ==========================================
+     * PSEUDO-3D PROJECTION MATH
+     * Converts World (X, Y, Z) to Screen (X, Y, Scale)
+     * ==========================================
+     */
+    function project3D(worldX, worldY, worldZ) {
+        // Distance from camera
+        const dz = worldZ - CONFIG.cameraZ;
+        
+        // Don't render if behind camera
+        if (dz <= 0) return null;
+
+        // Perspective scale factor
+        const scale = CONFIG.focalLength / dz;
+
+        // Map to screen space (centered)
+        // Note: worldY is 'up', but canvas screenY goes 'down', so we subtract.
+        const screenX = (window.innerWidth / 2) + (worldX * scale);
+        const screenY = (window.innerHeight / 2) - ((worldY - CONFIG.cameraY) * scale);
+
+        return { x: screenX, y: screenY, scale: scale };
+    }
+
+    /**
+     * ==========================================
+     * SPAWNING LOGIC
+     * ==========================================
+     */
+    let nextSpawnDistance = 0;
+    
+    function spawnEnvironment() {
+        // Spawn road striping continuously
+        if (roadLines.length === 0 || roadLines[roadLines.length - 1].z < CONFIG.spawnZ - 200) {
+            roadLines.push({ z: CONFIG.spawnZ });
+        }
+
+        // Spawn Game Objects based on distance traveled
+        if (distanceTraveled > nextSpawnDistance) {
+            // Randomize lane (-1, 0, 1)
+            const lane = Math.floor(Math.random() * 3) - 1;
+            
+            // 70% chance Obstacle, 30% chance Coin chunk
+            if (Math.random() > 0.3) {
+                // Obstacle
+                // 50/50 Low (Jump over) or High (Duck under)
+                const type = Math.random() > 0.5 ? 'LOW' : 'HIGH';
+                obstacles.push({
+                    lane: lane,
+                    z: CONFIG.spawnZ,
+                    type: type,
+                    width: 80,
+                    height: type === 'LOW' ? 60 : 120,
+                    yBase: type === 'LOW' ? 0 : 60 // High obstacles float
+                });
+            } else {
+                // Coin Chunk (Spawn 3-5 coins in a row)
+                const numCoins = Math.floor(Math.random() * 3) + 3;
+                for (let i = 0; i < numCoins; i++) {
+                    collectibles.push({
+                        lane: lane,
+                        z: CONFIG.spawnZ + (i * 150), // Space them out on Z
+                        y: 30, // Hover slightly above ground
+                        radius: 20,
+                        collected: false
+                    });
+                }
+            }
+            
+            // Set next spawn threshold (gets closer as speed increases)
+            const gap = Math.max(500, 1200 - (currentSpeed * 0.2));
+            nextSpawnDistance = distanceTraveled + gap;
+        }
+    }
+
+    /**
+     * ==========================================
+     * GAME UPDATE LOGIC (Physics & Collisions)
+     * ==========================================
+     */
+    function update(dt) {
+        if (gameState !== 'PLAYING') return;
+
+        // 1. Update Game Speed & Score
+        currentSpeed = Math.min(currentSpeed * Math.pow(CONFIG.speedMultiplier, dt), CONFIG.maxSpeed);
+        const zMoved = currentSpeed * dt;
+        distanceTraveled += zMoved;
+        
+        // Increase score passively based on distance
+        score += dt * 10;
+        document.getElementById('scoreDisplay').innerText = `SCORE: ${Math.floor(score)}`;
+
+        // 2. Update Player
+        // Smooth lane interpolation
+        player.lane += (player.targetLane - player.lane) * 15 * dt;
+
+        // Apply Gravity / Jumping
+        if (player.state === 'JUMPING' || player.y > 0) {
+            player.vy += CONFIG.gravity * dt;
+            player.y += player.vy * dt;
+
+            // Hit ground
+            if (player.y <= 0) {
+                player.y = 0;
+                player.vy = 0;
+                player.state = 'RUNNING';
+            }
+        }
+
+        // Handle Ducking Timer
+        if (player.state === 'DUCKING') {
+            player.duckTimer -= dt * 1000;
+            if (player.duckTimer <= 0) {
+                player.state = 'RUNNING';
+            }
+        }
+
+        const currentHeight = player.state === 'DUCKING' ? player.duckHeight : player.height;
+
+        // 3. Spawning
+        spawnEnvironment();
+
+        // 4. Update and Check Objects (Collision & Cleanup)
+        
+        // Helper to get player's physical center in world X
+        const playerX = player.lane * CONFIG.laneWidth;
+        const hitboxMargin = 30; // forgiving hitbox
+        
+        // OBSTACLES
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            let obs = obstacles[i];
+            obs.z -= zMoved; // Move towards camera
+            
+            // Collision Detection
+            // Check if obstacle is at player's Z depth
+            if (obs.z < CONFIG.playerZ + 30 && obs.z > CONFIG.playerZ - 30) {
+                const obsX = obs.lane * CONFIG.laneWidth;
+                
+                // Check X (Lane) overlap
+                if (Math.abs(playerX - obsX) < (player.width/2 + obs.width/2 - 10)) {
+                    
+                    // Check Y (Height) overlap based on type
+                    let hit = false;
+                    if (obs.type === 'LOW') {
+                        // Must jump over
+                        if (player.y < obs.height - 10) hit = true;
+                    } else if (obs.type === 'HIGH') {
+                        // Must duck under (Player top must be below obstacle base)
+                        if (player.y + currentHeight > obs.yBase + 10) hit = true;
+                    }
+                    
+                    if (hit) triggerGameOver();
+                }
+            }
+
+            // Remove if passed behind camera
+            if (obs.z < 0) obstacles.splice(i, 1);
+        }
+
+        // COINS
+        for (let i = collectibles.length - 1; i >= 0; i--) {
+            let coin = collectibles[i];
+            coin.z -= zMoved;
+
+            // Collision Detection
+            if (!coin.collected && coin.z < CONFIG.playerZ + 40 && coin.z > CONFIG.playerZ - 40) {
+                const coinX = coin.lane * CONFIG.laneWidth;
+                
+                // Generous collection radius
+                if (Math.abs(playerX - coinX) < 60 && player.y < coin.y + 50) {
+                    coin.collected = true;
+                    coins++;
+                    score += 50; // Bonus points
+                    document.getElementById('coinDisplay').innerText = `COINS: ${coins}`;
+                }
+            }
+
+            if (coin.z < 0 || coin.collected) collectibles.splice(i, 1);
+        }
+
+        // ROAD LINES
+        for (let i = roadLines.length - 1; i >= 0; i--) {
+            roadLines[i].z -= zMoved;
+            if (roadLines[i].z < 0) roadLines.splice(i, 1);
+        }
+    }
+
+    /**
+     * ==========================================
+     * RENDERING / DRAWING FUNCTIONS
+     * Replace fillRect/arc with drawImage for custom graphics!
+     * ==========================================
+     */
+    function render() {
+        // Clear screen with sky color
+        ctx.fillStyle = CONFIG.colors.sky;
+        ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+        // Draw Horizon / Ground Line
+        const horizonProj = project3D(0, 0, 10000); // far distance
+        const horizonY = horizonProj ? horizonProj.y : window.innerHeight / 2;
+        
+        ctx.fillStyle = CONFIG.colors.ground;
+        ctx.fillRect(0, horizonY, window.innerWidth, window.innerHeight - horizonY);
+
+        // Draw grid/lane lines (Fake perspective)
+        ctx.strokeStyle = CONFIG.colors.grid;
+        ctx.lineWidth = 4;
+        
+        // Draw Lane dividers
+        [-1.5, -0.5, 0.5, 1.5].forEach(laneOffset => {
+            const worldX = laneOffset * CONFIG.laneWidth;
+            const bottomProj = project3D(worldX, 0, 10);
+            const topProj = project3D(worldX, 0, CONFIG.spawnZ);
+            
+            if (bottomProj && topProj) {
+                ctx.beginPath();
+                ctx.moveTo(bottomProj.x, bottomProj.y);
+                ctx.lineTo(topProj.x, topProj.y);
+                ctx.stroke();
+            }
+        });
+
+        // Combine all renderable objects into one array to depth-sort them
+        // (Painters algorithm: draw from farthest Z to closest Z)
+        let renderList = [];
+
+        // Add Road horizontal lines (speed lines)
+        roadLines.forEach(line => {
+            renderList.push({ type: 'ROADLINE', z: line.z });
+        });
+
+        // Add Obstacles
+        obstacles.forEach(obs => {
+            renderList.push({ type: 'OBSTACLE', ref: obs, z: obs.z });
+        });
+
+        // Add Coins
+        collectibles.forEach(coin => {
+            if(!coin.collected) {
+                renderList.push({ type: 'COIN', ref: coin, z: coin.z });
+            }
+        });
+
+        // Add Player
+        renderList.push({ type: 'PLAYER', z: CONFIG.playerZ });
+
+        // SORT DESCENDING BY Z (Farthest first)
+        renderList.sort((a, b) => b.z - a.z);
+
+        // RENDER LOOP
+        renderList.forEach(item => {
+            if (item.type === 'ROADLINE') drawRoadLine(item.z);
+            else if (item.type === 'OBSTACLE') drawObstacle(item.ref);
+            else if (item.type === 'COIN') drawCoin(item.ref);
+            else if (item.type === 'PLAYER') drawPlayer();
+        });
+    }
+
+    // --- TEMPLATE DRAWING HELPERS ---
+    // TO CUSTOMIZE: Swap the contents of these functions with ctx.drawImage(...)
+
+    function drawRoadLine(z) {
+        const p1 = project3D(-1.5 * CONFIG.laneWidth, 0, z);
+        const p2 = project3D(1.5 * CONFIG.laneWidth, 0, z);
+        if(!p1 || !p2) return;
+
+        ctx.strokeStyle = CONFIG.colors.grid;
+        // Make lines thicker as they get closer
+        ctx.lineWidth = Math.max(1, p1.scale * 2); 
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+    }
+
+    function drawObstacle(obs) {
+        const worldX = obs.lane * CONFIG.laneWidth;
+        const p = project3D(worldX, obs.yBase, obs.z);
+        if (!p) return;
+
+        const w = obs.width * p.scale;
+        const h = obs.height * p.scale;
+        // Adjust x so it draws centered on the lane
+        const rx = p.x - w / 2;
+        // Adjust y so it draws up from the base line
+        const ry = p.y - h;
+
+        // Custom Graphics Entry Point Here:
+        // ctx.drawImage(myObstacleSprite, rx, ry, w, h);
+        
+        ctx.fillStyle = obs.type === 'LOW' ? CONFIG.colors.obsLow : CONFIG.colors.obsHigh;
+        ctx.strokeStyle = CONFIG.colors.outline;
+        ctx.lineWidth = Math.max(1, 4 * p.scale); // Bold comic outline
+        
+        // Draw Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillRect(rx - (10*p.scale), p.y - (5*p.scale), w + (20*p.scale), 10*p.scale);
+
+        // Draw Box
+        ctx.fillStyle = obs.type === 'LOW' ? CONFIG.colors.obsLow : CONFIG.colors.obsHigh;
+        ctx.fillRect(rx, ry, w, h);
+        ctx.strokeRect(rx, ry, w, h);
+        
+        // Stylized pop-art inner highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillRect(rx + (5*p.scale), ry + (5*p.scale), w/4, h/2);
+    }
+
+    function drawCoin(coin) {
+        const worldX = coin.lane * CONFIG.laneWidth;
+        // Add a slight hover bobbing effect based on distance traveled
+        const bob = Math.sin((distanceTraveled + coin.z) * 0.01) * 10;
+        const p = project3D(worldX, coin.y + bob, coin.z);
+        if (!p) return;
+
+        const r = coin.radius * p.scale;
+
+        // Custom Graphics Entry Point Here:
+        // ctx.drawImage(myCoinSprite, p.x - r, p.y - r, r*2, r*2);
+
+        ctx.fillStyle = CONFIG.colors.coin;
+        ctx.strokeStyle = CONFIG.colors.outline;
+        ctx.lineWidth = Math.max(1, 3 * p.scale);
+
+        ctx.beginPath();
+        // Drawing an ellipse gives a fake 3D rotating coin effect if animated,
+        // but simple circle fits pop-art well.
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Highlight
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath();
+        ctx.arc(p.x - r/3, p.y - r/3, r/4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawPlayer() {
+        // Interpolated world X position based on lane switching
+        const worldX = player.lane * CONFIG.laneWidth;
+        const p = project3D(worldX, player.y, CONFIG.playerZ);
+        if (!p) return;
+
+        // Determine current physical height (ducking vs running)
+        const currentHeight = player.state === 'DUCKING' ? player.duckHeight : player.height;
+        
+        const w = player.width * p.scale;
+        const h = currentHeight * p.scale;
+        const rx = p.x - w / 2;
+        const ry = p.y - h;
+
+        // Custom Graphics Entry Point Here:
+        // let currentSprite = player.state === 'DUCKING' ? spriteDuck : player.state === 'JUMPING' ? spriteJump : spriteRun;
+        // ctx.drawImage(currentSprite, rx, ry, w, h);
+
+        // Draw Ground Shadow (scales with height to show jump depth)
+        const shadowProj = project3D(worldX, 0, CONFIG.playerZ);
+        if(shadowProj) {
+            const shadowScale = p.scale * (1 - Math.min(player.y / 300, 0.8));
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.beginPath();
+            ctx.ellipse(shadowProj.x, shadowProj.y, 40 * shadowScale, 15 * shadowScale, 0, 0, Math.PI*2);
+            ctx.fill();
+        }
+
+        // Draw Player Box
+        ctx.fillStyle = CONFIG.colors.player;
+        ctx.strokeStyle = CONFIG.colors.outline;
+        ctx.lineWidth = 4 * p.scale;
+        
+        // Add a slight skew if switching lanes to look dynamic
+        const tilt = (player.targetLane - player.lane) * 0.2;
+        
+        ctx.save();
+        ctx.translate(rx + w/2, ry + h);
+        ctx.rotate(tilt);
+        ctx.translate(-(rx + w/2), -(ry + h));
+
+        // Outline + Fill
+        ctx.fillRect(rx, ry, w, h);
+        ctx.strokeRect(rx, ry, w, h);
+
+        // Face / Visor (Pop art detail)
+        ctx.fillStyle = '#FFF';
+        ctx.fillRect(rx + w*0.2, ry + h*0.2, w*0.6, h*0.2);
+        ctx.strokeRect(rx + w*0.2, ry + h*0.2, w*0.6, h*0.2);
+
+        ctx.restore();
+    }
+
+    /**
+     * ==========================================
+     * MAIN GAME LOOP
+     * ==========================================
+     */
+    function gameLoop(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        // Delta time in seconds. Cap at 0.1 to prevent physics breaking on lag/tab change
+        const dt = Math.min((timestamp - lastTime) / 1000, 0.1); 
+        lastTime = timestamp;
+
+        if (gameState === 'PLAYING') {
+            update(dt);
+        }
+        
+        render(); // Always render, even when start/game over screen is up
+        
+        requestAnimationFrame(gameLoop);
+    }
+
+    /**
+     * ==========================================
+     * GAME STATE MANAGEMENT
+     * ==========================================
+     */
+    function initGame() {
+        score = 0;
+        coins = 0;
+        currentSpeed = CONFIG.baseSpeed;
+        distanceTraveled = 0;
+        nextSpawnDistance = 1000;
+        
+        obstacles = [];
+        collectibles = [];
+        roadLines = [];
+        
+        player.lane = 0;
+        player.targetLane = 0;
+        player.y = 0;
+        player.vy = 0;
+        player.state = 'RUNNING';
+
+        document.getElementById('scoreDisplay').innerText = 'SCORE: 0';
+        document.getElementById('coinDisplay').innerText = 'COINS: 0';
+        
+        document.getElementById('startScreen').classList.add('hidden');
+        document.getElementById('gameOverScreen').classList.add('hidden');
+        
+        gameState = 'PLAYING';
+    }
+
+    function triggerGameOver() {
+        gameState = 'GAMEOVER';
+        document.getElementById('finalScore').innerText = `FINAL SCORE: ${Math.floor(score)}`;
+        document.getElementById('finalCoins').innerText = `COINS GATHERED: ${coins}`;
+        document.getElementById('gameOverScreen').classList.remove('hidden');
+    }
+
+    // UI Listeners
+    document.getElementById('startBtn').addEventListener('click', initGame);
+    document.getElementById('restartBtn').addEventListener('click', initGame);
+
+    // Boot Up
+    requestAnimationFrame(gameLoop);
+
+</script>
+</body>
+</html>

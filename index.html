@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atomic Pizza</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Tailwind CSS (Cargado vía CDN para el prototipo) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuración de Tailwind para usar Variables CSS -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--color-primary)',
+                        primaryHover: 'var(--color-primary-hover)',
+                        secondary: 'var(--color-secondary)',
+                        accent: 'var(--color-accent)',
+                        dark: 'var(--color-dark)',
+                        light: 'var(--color-light)',
+                    },
+                    fontFamily: {
+                        sans: ['var(--font-body)', 'sans-serif'],
+                        heading: ['var(--font-heading)', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- ESTILOS PRINCIPALES Y VARIABLES CSS PARA FÁCIL EDICIÓN -->
+    <style>
+        :root {
+            /* ==================================================================
+               ZONA DE EDICIÓN PARA DISEÑADORES
+               Cambia estos valores hexadecimales para adaptar la plantilla a tu marca
+               ================================================================== */
+            
+            --color-primary: rgb(255, 251, 0);       /* Rojo principal (ej. Fuego) */
+            --color-primary-hover: #be1212; /* Rojo más oscuro para hover */
+            --color-secondary: #f97316;     /* Naranja (ej. Queso/Chili) */
+            --color-accent: #fffb00;        /* Amarillo vibrante */
+            --color-dark: #111827;          /* Texto principal y Footer */
+            --color-light: #f8fafc;         /* Fondo claro general */
+
+            /* Tipografías */
+            --font-heading: 'Bowlby', sans-serif; /* Títulos llamativos */
+            --font-body: 'Bazinga', sans-serif;      /* Textos legibles */
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+.logo {
+width: 100px;
+}
+        body {
+            background-color: var(--color-light);
+            color: var(--color-dark);
+            font-family: var(--font-body);
+        }
+
+        h1, h2, h3, h4, h5, h6, .font-heading {
+            font-family: var(--font-heading);
+            text-transform: uppercase;
+        }
+
+        /* Utilidad para degradados de la marca */
+        .bg-brand-gradient {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        }
+    </style>
+</head>
+<body class="antialiased flex flex-col min-h-screen">
+
+    <!-- NAVEGACIÓN -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                
+                    <a href="index.html"><img src="img/AP-LOGO.png" alt="Logo" class="logo"></a>
+                  
+                </div>
+
+                <!-- Menú Desktop -->
+                <nav class="hidden md:flex space-x-8 items-center">
+                    <a href="#productos" class="text-dark hover:text-primary font-medium transition-colors">Productos</a>
+                    <a href="#recetas" class="text-dark hover:text-primary font-medium transition-colors">Recetas</a>
+                    <a href="#nosotros" class="text-dark hover:text-primary font-medium transition-colors">Sobre Nosotros</a>
+                    <a href="#comprar" class="bg-primary hover:bg-primaryHover text-white px-6 py-2 rounded-full font-bold transition-transform hover:scale-105 shadow-lg shadow-primary/30">
+                        Dónde Comprar
+                    </a>
+                </nav>
+
+                <!-- Botón Menú Móvil -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-dark hover:text-primary focus:outline-none p-2">
+                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menú Móvil (Desplegable) -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 absolute w-full left-0 shadow-lg">
+            <div class="px-4 pt-2 pb-6 space-y-2 flex flex-col text-center">
+                <a href="#productos" class="block px-3 py-3 text-lg font-medium text-dark hover:text-primary hover:bg-gray-50 rounded-md">Productos</a>
+                <a href="#recetas" class="block px-3 py-3 text-lg font-medium text-dark hover:text-primary hover:bg-gray-50 rounded-md">Recetas</a>
+                <a href="#nosotros" class="block px-3 py-3 text-lg font-medium text-dark hover:text-primary hover:bg-gray-50 rounded-md">Sobre Nosotros</a>
+                <a href="#comprar" class="block mt-4 bg-primary text-white px-3 py-3 rounded-full font-bold mx-4 shadow-md">
+                    Dónde Comprar
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="relative bg-brand-gradient text-white overflow-hidden">
+        <!-- Textura/Patrón de fondo (Opcional) -->
+        <div class="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNmZmYiLz48L3N2Zz4=')]"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col md:flex-row items-center py-20 md:py-32">
+            <div class="md:w-1/2 text-center md:text-left mb-10 md:mb-0">
+                <span class="inline-block py-1 px-3 rounded-full bg-accent text-dark font-bold text-sm mb-4">¡NUEVO SABOR!</span>
+                <h1 class="text-5xl md:text-7xl font-black leading-tight mb-6 drop-shadow-lg">
+                    <span class="text-accent">HÉROES DEL SABOR</span>
+                </h1>
+                <p class="text-lg md:text-xl mb-8 font-medium max-w-lg mx-auto md:mx-0 opacity-90">
+                    ¡La Aventura del Sabor Inicia Ahora!
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                    <a href="#productos" class="bg-accent hover:bg-white text-dark px-8 py-4 rounded-full font-bold text-lg transition-all shadow-[0_0_20px_rgba(250,204,21,0.4)] hover:scale-105 text-center">
+                        Ver Productos
+                    </a>
+                    <a href="#comprar" class="bg-transparent border-2 border-white hover:bg-white hover:text-primary text-white px-8 py-4 rounded-full font-bold text-lg transition-all text-center">
+                        Comprar
+                    </a>
+                </div>
+            </div>
+            
+            <div class="md:w-1/2 flex justify-center relative">
+                <!-- Imagen del producto Hero (Reemplazar URL) -->
+                <img src="https://placehold.co/600x600/transparent/ffffff?text=Imagen+Snack+3D" alt="Empaque de Snack" class="w-full max-w-md transform rotate-6 hover:rotate-0 transition-transform duration-500 drop-shadow-2xl">
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN DE PRODUCTOS (GRID) -->
+    <section id="productos" class="py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-black text-dark mb-4">NUESTRA <span class="text-primary">LÍNEA</span></h2>
+                <p class="text-gray-600 max-w-2xl mx-auto text-lg">Explora nuestra variedad de sabores diseñados para los paladares más exigentes y aventureros.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <!-- Tarjeta de Producto 1 -->
+                <div class="bg-light rounded-3xl p-8 text-center group hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col h-full relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-primary text-white font-bold py-1 px-4 rounded-bl-xl z-10">🔥</div>
+                    <div class="h-64 flex items-center justify-center mb-6">
+                        <img src="https://placehold.co/300x400/e11d48/ffffff?text=FUEGO" alt="Sabor Fuego" class="max-h-full object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-xl">
+                    </div>
+                    <h3 class="text-2xl font-black mb-2">SABOR FUEGO</h3>
+                    <p class="text-gray-600 mb-8 flex-grow">Para los valientes. Una explosión de chile y limón que te dejará sin aliento.</p>
+                    <a href="#" class="w-full block bg-dark text-white hover:bg-primary py-3 rounded-xl font-bold transition-colors">
+                        Ver producto
+                    </a>
+                </div>
+
+                <!-- Tarjeta de Producto 2 -->
+                <div class="bg-light rounded-3xl p-8 text-center group hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col h-full relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-blue-500 text-white font-bold py-1 px-4 rounded-bl-xl z-10">❄️</div>
+                    <div class="h-64 flex items-center justify-center mb-6">
+                        <img src="https://placehold.co/300x400/3b82f6/ffffff?text=ICE" alt="Sabor Ice" class="max-h-full object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-xl">
+                    </div>
+                    <h3 class="text-2xl font-black mb-2">SABOR ICE</h3>
+                    <p class="text-gray-600 mb-8 flex-grow">El contraste perfecto. Un toque cítrico intenso con una frescura inesperada.</p>
+                    <a href="#" class="w-full block bg-dark text-white hover:bg-primary py-3 rounded-xl font-bold transition-colors">
+                        Ver producto
+                    </a>
+                </div>
+
+                <!-- Tarjeta de Producto 3 -->
+                <div class="bg-light rounded-3xl p-8 text-center group hover:shadow-2xl transition-all duration-300 border border-gray-100 flex flex-col h-full relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-green-500 text-white font-bold py-1 px-4 rounded-bl-xl z-10">🌿</div>
+                    <div class="h-64 flex items-center justify-center mb-6">
+                        <img src="https://placehold.co/300x400/22c55e/ffffff?text=RANCH" alt="Sabor Ranch" class="max-h-full object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-xl">
+                    </div>
+                    <h3 class="text-2xl font-black mb-2">BUFFALO RANCH</h3>
+                    <p class="text-gray-600 mb-8 flex-grow">La combinación ganadora. Especias de buffalo suaves bañadas en cremoso ranch.</p>
+                    <a href="#" class="w-full block bg-dark text-white hover:bg-primary py-3 rounded-xl font-bold transition-colors">
+                        Ver producto
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GALERÍA / ESTILO DE VIDA -->
+    <section class="py-16 bg-dark text-white overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 text-center">
+            <h2 class="text-3xl md:text-4xl font-black mb-4">VIVE LA <span class="text-accent">EXPERIENCIA</span></h2>
+            <p class="text-gray-400">Comparte tus momentos usando el hashtag #RetoSnacks</p>
+        </div>
+        
+        <!-- Grid de Galería (Estilo Instagram) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 px-2 md:px-4">
+            <div class="aspect-square bg-gray-800 rounded-lg overflow-hidden group">
+                <img src="https://placehold.co/400x400/2d3748/ffffff?text=Foto+1" alt="Galería" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            </div>
+            <div class="aspect-square bg-gray-800 rounded-lg overflow-hidden group">
+                <img src="https://placehold.co/400x400/1a202c/ffffff?text=Foto+2" alt="Galería" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            </div>
+            <div class="aspect-square bg-gray-800 rounded-lg overflow-hidden group">
+                <img src="https://placehold.co/400x400/4a5568/ffffff?text=Foto+3" alt="Galería" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            </div>
+            <div class="aspect-square bg-gray-800 rounded-lg overflow-hidden group">
+                <img src="https://placehold.co/400x400/718096/ffffff?text=Foto+4" alt="Galería" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t-4 border-primary pt-16 pb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                <!-- Marca -->
+                <div class="col-span-1 md:col-span-1">
+                    <a href="#" class="text-3xl font-heading text-primary tracking-tighter block mb-4">
+                        MARCA<span class="text-secondary">SNACKS</span>
+                    </a>
+                    <p class="text-gray-500 text-sm mb-6">Elaborado con pasión para los amantes de los sabores extremos y la diversión sin límites.</p>
+                </div>
+
+                <!-- Enlaces -->
+                <div>
+                    <h4 class="font-bold text-dark text-lg mb-4">Navegación</h4>
+                    <ul class="space-y-2 text-gray-500">
+                        <li><a href="#productos" class="hover:text-primary transition-colors">Productos</a></li>
+                        <li><a href="#recetas" class="hover:text-primary transition-colors">Recetas</a></li>
+                        <li><a href="#nosotros" class="hover:text-primary transition-colors">Nuestra Historia</a></li>
+                        <li><a href="#comprar" class="hover:text-primary transition-colors">Dónde Comprar</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contacto Regional (Basado en la web original) -->
+                <div class="col-span-1 md:col-span-2">
+                    <h4 class="font-bold text-dark text-lg mb-4">Atención al Cliente</h4>
+                    <div class="grid grid-cols-2 gap-4 text-sm text-gray-500">
+                        <div>
+                            <span class="block font-bold text-gray-800">Guatemala</span>
+                            <a href="tel:+50200000000" class="hover:text-primary transition-colors">+502 0000-0000</a>
+                        </div>
+                        <div>
+                            <span class="block font-bold text-gray-800">El Salvador</span>
+                            <a href="tel:+50300000000" class="hover:text-primary transition-colors">+503 0000-0000</a>
+                        </div>
+                        <div>
+                            <span class="block font-bold text-gray-800">Honduras</span>
+                            <a href="tel:+50400000000" class="hover:text-primary transition-colors">+504 0000-0000</a>
+                        </div>
+                        <div>
+                            <span class="block font-bold text-gray-800">Costa Rica</span>
+                            <a href="tel:+50600000000" class="hover:text-primary transition-colors">+506 0000-0000</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Redes y Copyright -->
+            <div class="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-gray-400 text-sm">
+                    &copy; 2026 Compañía de Snacks. Todos los derechos reservados.
+                </p>
+                
+                <!-- Redes Sociales (Iconos SVG) -->
+                <div class="flex space-x-6">
+                    <!-- Facebook -->
+                    <a href="https://www.facebook.com/atomic.nicaragua" class="text-gray-400 hover:text-primary transition-colors">
+                        <span class="sr-only">Facebook</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    <!-- Instagram -->
+                    <a href="https://www.instagram.com/atomicpizzanica/" class="text-gray-400 hover:text-primary transition-colors">
+                        <span class="sr-only">Instagram</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clip-rule="evenodd" />
+                        </svg>
+                    </a>
+                    <!-- TikTok (Custom SVG path simplificado) -->
+                    <a href="https://www.tiktok.com/@atomicpizzanica" class="text-gray-400 hover:text-primary transition-colors">
+                        <span class="sr-only">TikTok</span>
+                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SCRIPT DE INTERACCIÓN (Menú Móvil) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+
+            // Alternar menú móvil
+            btn.addEventListener('click', () => {
+                menu.classList.toggle('hidden');
+            });
+
+            // Cerrar menú al hacer clic en un enlace
+            const mobileLinks = menu.querySelectorAll('a');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    menu.classList.add('hidden');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
